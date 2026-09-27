@@ -5,9 +5,9 @@
 //  Created by Zaid Rahhawi on 9/11/26.
 //
 
-import Authentication
+public import Authentication
 import ServiceContextModule
-import Vapor
+public import Vapor
 
 /// Binds the principal a bearer token proves, for the length of the request.
 ///
