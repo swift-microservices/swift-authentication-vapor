@@ -16,7 +16,9 @@ task-local and calls the next responder does not hand that task-local to the rou
 route runs in a task the framework starts from a future callback. The middleware binds the
 task-local anyway, for the parts of the chain that are async end to end, but what reliably
 reaches a route is `request.serviceContext`. That is the same field Vapor's own tracing
-middleware uses to carry its span, for the same reason.
+middleware uses to carry its span, for the same reason. The principal is added to the
+request's existing context, so a span or other value an earlier middleware recorded there is
+kept.
 
 So a route that needs the principal for something outside Vapor runs that work under the
 request's context:
