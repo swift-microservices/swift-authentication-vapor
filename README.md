@@ -3,7 +3,7 @@
 Binding who is calling on Vapor: a bearer token, proved and logged in to the request.
 
 ```swift
-.package(url: "https://github.com/swift-microservices/swift-authentication-vapor.git", from: "0.1.0"),
+.package(url: "https://github.com/swift-microservices/swift-authentication-vapor.git", from: "0.2.0"),
 ```
 
 ```swift
@@ -50,7 +50,11 @@ try await ServiceContext.withValue(req.serviceContext) {
 
 ## Requirements
 
-Swift 6.3, macOS 15 or Linux. Vapor 4.122.
+Swift 6.3, macOS 15 or Linux. Vapor 4.122, swift-authentication 0.2.
+
+Vapor 4 links full Foundation, including its internationalization libraries (still true of
+4.122.2), so unlike the other swift-authentication packages this one has no Foundation linking
+check in CI. Its own code needs no Foundation.
 
 ## Development
 

@@ -60,7 +60,7 @@ public struct BearerAuthenticationMiddleware<Identity: Authenticatable & Sendabl
 
         request.auth.login(identity)
 
-        var serviceContext = ServiceContext.current ?? request.serviceContext
+        var serviceContext = request.serviceContext
         serviceContext[PrincipalKey<Identity, String>.self] = Principal(identity: identity, credential: token)
         request.serviceContext = serviceContext
 

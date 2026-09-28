@@ -93,6 +93,39 @@ struct BearerAuthenticationMiddlewareTests {
         #expect(response.status == .unauthorized)
     }
 
+    enum RequestIDKey: ServiceContextKey {
+        typealias Value = String
+    }
+
+    /// Stands in for a middleware that records a value on the request's context, such as a
+    /// request ID, while an unrelated task-local context is bound around the rest of the chain.
+    struct RequestContextMiddleware: AsyncMiddleware {
+        func respond(to request: Request, chainingTo next: any AsyncResponder) async throws -> Response {
+            request.serviceContext[RequestIDKey.self] = "request-1"
+            return try await ServiceContext.withValue(.topLevel) {
+                try await next.respond(to: request)
+            }
+        }
+    }
+
+    @Test("A proved token adds the principal to the request's existing context")
+    func provedTokenKeepsRequestContext() async throws {
+        try await withApp { app in
+            app.middleware.use(RequestContextMiddleware())
+            app.middleware.use(middleware)
+            app.get("context") { request in
+                let requestID = request.serviceContext[RequestIDKey.self] ?? "-"
+                let subject = request.serviceContext[PrincipalKey<Claims, String>.self]?.identity.subject ?? "-"
+                return "\(requestID) \(subject)"
+            }
+
+            try await app.testing().test(.GET, "context", headers: ["Authorization": "Bearer alice-token"]) { response in
+                #expect(response.status == .ok)
+                #expect(response.body.string == "request-1 alice")
+            }
+        }
+    }
+
     @Test("A proved token satisfies the guard on a protected route")
     func provedTokenPassesGuard() async throws {
         try await withApp { app in
