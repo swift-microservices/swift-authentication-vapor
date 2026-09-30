@@ -18,19 +18,22 @@ struct BearerAuthenticationMiddlewareTests {
         let subject: String
     }
 
-    /// An authenticator over a table: a known token proves its claims, an unknown one is
-    /// declined, and a token in the refused set throws.
+    /// An authenticator over a table: known tokens prove their claims; unknown or
+    /// refused tokens throw.
     struct TableAuthenticator: Authentication.Authenticator {
         struct Refused: Error {}
 
         let identities: [String: Claims]
         let refused: Set<String>
 
-        func authenticate(_ token: String) throws -> Claims? {
+        func authenticate(_ token: String) throws -> Claims {
             if refused.contains(token) {
                 throw Refused()
             }
-            return identities[token]
+            guard let identity = identities[token] else {
+                throw Refused()
+            }
+            return identity
         }
     }
 
@@ -42,10 +45,11 @@ struct BearerAuthenticationMiddlewareTests {
     /// the logged-in identity and the principal in the request's `serviceContext`, or `-` for
     /// none. The task-local `ServiceContext` is not asserted: Vapor 4 bridges its responder chain
     /// through event-loop futures, so a task-local bound in middleware does not reach a route.
-    func whoami(authorization: String?) async throws -> (status: HTTPStatus, body: String) {
+    func whoami(authorization: String?, handlerCalls: HandlerCalls = HandlerCalls()) async throws -> (status: HTTPStatus, body: String) {
         try await withApp { app in
             app.middleware.use(middleware)
-            app.get("whoami") { request in
+            app.get("whoami") { request async in
+                await handlerCalls.record()
                 let principal = request.serviceContext[PrincipalKey<Claims, String>.self]
                 return "\(request.auth.get(Claims.self)?.subject ?? "-") \(principal?.identity.subject ?? "-") \(principal?.credential ?? "-")"
             }
@@ -64,33 +68,40 @@ struct BearerAuthenticationMiddlewareTests {
 
     @Test("A request with no token continues anonymously")
     func noTokenContinuesAnonymously() async throws {
-        let response = try await whoami(authorization: nil)
+        let calls = HandlerCalls()
+        let response = try await whoami(authorization: nil, handlerCalls: calls)
 
         #expect(response.status == .ok)
         #expect(response.body == "- - -")
+        #expect(await calls.count == 1)
     }
 
     @Test("A proved token logs the identity in and binds the principal")
     func provedTokenLogsInAndBindsPrincipal() async throws {
-        let response = try await whoami(authorization: "Bearer alice-token")
+        let calls = HandlerCalls()
+        let response = try await whoami(authorization: "Bearer alice-token", handlerCalls: calls)
 
         #expect(response.status == .ok)
         #expect(response.body == "alice alice alice-token")
+        #expect(await calls.count == 1)
     }
 
-    @Test("A declined token continues unbound")
-    func declinedTokenContinuesUnbound() async throws {
-        let response = try await whoami(authorization: "Bearer unknown-token")
+    @Test("An unknown token is 401 Unauthorized before the route runs")
+    func unknownTokenIsUnauthorized() async throws {
+        let calls = HandlerCalls()
+        let response = try await whoami(authorization: "Bearer unknown-token", handlerCalls: calls)
 
-        #expect(response.status == .ok)
-        #expect(response.body == "- - -")
+        #expect(response.status == .unauthorized)
+        #expect(await calls.count == 0)
     }
 
     @Test("A refused token is 401 Unauthorized before the route runs")
     func refusedTokenIsUnauthorized() async throws {
-        let response = try await whoami(authorization: "Bearer expired-token")
+        let calls = HandlerCalls()
+        let response = try await whoami(authorization: "Bearer expired-token", handlerCalls: calls)
 
         #expect(response.status == .unauthorized)
+        #expect(await calls.count == 0)
     }
 
     enum RequestIDKey: ServiceContextKey {
@@ -142,5 +153,14 @@ struct BearerAuthenticationMiddlewareTests {
                 #expect(response.body.string == "alice")
             }
         }
+    }
+}
+
+/// Counts route invocations across the framework's responder tasks.
+actor HandlerCalls {
+    private(set) var count = 0
+
+    func record() {
+        count += 1
     }
 }

@@ -3,7 +3,7 @@
 Binding who is calling on Vapor: a bearer token, proved and logged in to the request.
 
 ```swift
-.package(url: "https://github.com/swift-microservices/swift-authentication-vapor.git", from: "0.2.0"),
+.package(url: "https://github.com/swift-microservices/swift-authentication-vapor.git", from: "0.3.0"),
 ```
 
 ```swift
@@ -30,9 +30,9 @@ app.grouped(AppToken.guardMiddleware()).get("account") { req in
 
 The identity is any `Authenticatable`, so Vapor's own guard and require helpers work on it
 unchanged. A request with no token continues anonymously, which is what an open route needs:
-signing in mints the first token and has no caller yet. A token the authenticator declines
-continues unbound. A token it refuses is `401 Unauthorized`, because absent and invalid are not
-the same thing. Requiring a caller is a route's decision, made with `guardMiddleware()`.
+signing in mints the first token and has no caller yet. `Authenticator.authenticate(_:)` returns an identity
+or throws. A failed authentication ends the request with `401 Unauthorized` before the route
+runs. Requiring a caller is a route's decision, made with `guardMiddleware()`.
 
 ## The request's context, not the task's
 
@@ -50,7 +50,7 @@ try await ServiceContext.withValue(req.serviceContext) {
 
 ## Requirements
 
-Swift 6.3, macOS 15 or Linux. Vapor 4.122, swift-authentication 0.2.
+Swift 6.3, macOS 15 or Linux. Vapor 4.122, swift-authentication 0.3.
 
 Vapor 4 links full Foundation, including its internationalization libraries (still true of
 4.122.2), so unlike the other swift-authentication packages this one has no Foundation linking

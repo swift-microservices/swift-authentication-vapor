@@ -36,6 +36,7 @@ presents the token onward, exactly as it would in a gRPC service.
 
 ## Open routes and protected routes
 
-A request with no token continues anonymously; a token the authenticator declines continues
-unbound; a token it refuses is `401 Unauthorized` before any route runs. Requiring a caller is
-a route's decision, made with `guardMiddleware()` on the routes that need one.
+A request with no token continues anonymously. `Authenticator.authenticate(_:)` returns an
+identity or throws; a failed authentication ends the request with `401 Unauthorized` before the
+route runs. Requiring a caller is a route's decision, made with `guardMiddleware()` on the
+routes that need one.
