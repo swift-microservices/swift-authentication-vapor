@@ -14,6 +14,9 @@ context; <doc:TheRequestsContext> explains why the task's context is not enough.
 The identity is any `Authenticatable`, so Vapor's own guard and require helpers work on it
 unchanged.
 
+Authentication returns an identity or throws. A missing credential continues anonymously;
+a failed authentication ends the request with `401 Unauthorized` before the handler runs.
+
 ## Example
 
 ```swift

@@ -14,8 +14,9 @@ This package binds principals on Vapor. Read this before changing anything.
   and `req.auth.require`, and `request.serviceContext`, for everything downstream. Keep both in
   step. The task-local `ServiceContext` is also bound, but Vapor 4's future-bridged responder
   chain does not carry it to routes; do not write tests that assume it does.
-- The three answers are honoured exactly: an identity binds, `nil` continues unbound, a throw is
-  `Abort(.unauthorized)`. A request with no token never reaches the authenticator.
+- Authentication returns an identity or throws. An identity binds; a failure ends the request
+  with `Abort(.unauthorized)` before the route runs. A request with no token never reaches
+  the authenticator and continues anonymously.
 - The `Authorization` header is read with Vapor's own `headers.bearerAuthorization`; this package
   parses nothing itself.
 

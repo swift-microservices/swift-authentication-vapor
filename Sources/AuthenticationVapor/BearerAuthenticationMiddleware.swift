@@ -12,9 +12,8 @@ public import Vapor
 /// Binds the principal a bearer token proves, for the length of the request.
 ///
 /// The token is read from the `Authorization` header. A request with no token continues
-/// anonymously, which is what an open route needs. A token the authenticator declines continues
-/// unbound. A token it refuses fails the request with `401 Unauthorized`, because absent and
-/// invalid are not the same thing.
+/// anonymously, which is what an open route needs. The authenticator returns an identity or
+/// throws. A failed authentication ends the request with `401 Unauthorized` before the route runs.
 ///
 /// The proven identity is set in two places: the request's `auth`, which `GuardMiddleware`,
 /// `req.auth.require`, and route handlers read, and the request's `serviceContext`, under
@@ -54,9 +53,7 @@ public struct BearerAuthenticationMiddleware<Identity: Authenticatable & Sendabl
             return try await next.respond(to: request)
         }
 
-        guard let identity = try await authenticate(token) else {
-            return try await next.respond(to: request)
-        }
+        let identity = try await authenticate(token)
 
         request.auth.login(identity)
 
@@ -72,7 +69,7 @@ public struct BearerAuthenticationMiddleware<Identity: Authenticatable & Sendabl
     /// The rejection is an `Abort` rather than the authenticator's error, which carries no status
     /// and would be reported as a server fault: the wrong answer for the most ordinary request a
     /// client makes, one holding a token that has expired.
-    private func authenticate(_ token: String) async throws -> Identity? {
+    private func authenticate(_ token: String) async throws -> Identity {
         do {
             return try await authenticator.authenticate(token)
         } catch {
