@@ -32,11 +32,10 @@ app.get("orders") { req in
 ```
 
 Inside that closure, swift-authentication-grpc's propagation interceptor finds the principal and
-presents the token onward, exactly as it would in a gRPC service.
+presents the original token on upstream user RPC descriptors.
 
-## Open routes and protected routes
+## User routes
 
-A request with no token continues anonymously. `Authenticator.authenticate(_:)` returns an
-identity or throws; a failed authentication ends the request with `401 Unauthorized` before the
-route runs. Requiring a caller is a route's decision, made with `guardMiddleware()` on the
-routes that need one.
+Apply bearer authentication and `guardMiddleware()` to user routes. Missing credentials continue
+unbound; failed verification returns `401 Unauthorized`. The guard requires an identity before
+the handler runs, and the owning use case checks user permissions and resource access.
