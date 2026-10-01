@@ -20,13 +20,20 @@ This package binds principals on Vapor. Read this before changing anything.
 - The `Authorization` header is read with Vapor's own `headers.bearerAuthorization`; this package
   parses nothing itself.
 
+## Application standard
+
+- Apply bearer middleware and user guards to user routes. Owning use cases authorize users.
+- Backend RPC connections use mandatory mTLS. Forward the original user JWT only on user
+  descriptors; each receiving service verifies it. User database settings follow user operations.
+- Keep public, user, and internal RPC audiences separate and internal listeners private.
+
 ## What does not belong here
 
 - Authorization. Requiring a caller is `guardMiddleware()`'s job on the routes that need one;
   roles and permissions are the application's.
-- A credential format. Proofs are swift-authentication-jwt and swift-authentication-x509.
-- Client certificates. Vapor does not expose the peer certificate to middleware; that is the
-  gRPC package's concern.
+- A credential format. swift-authentication-jwt provides user JWT verification.
+- Backend transport configuration. Composition roots own mandatory mTLS, explicit CA trust,
+  and certificate reloader lifecycle for outgoing service RPCs.
 - Vapor 5. It is in alpha on a 6.4 toolchain; this package targets Vapor 4 until 5 ships.
 
 ## Swift

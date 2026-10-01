@@ -21,9 +21,11 @@ and sets the identity in two places:
   `PrincipalKey<Identity, String>`.
 
 ```swift
-app.middleware.use(BearerAuthenticationMiddleware(authenticator: JWTAuthenticator<AppToken>(keys: keys)))
+let userRoutes = app.grouped(
+    BearerAuthenticationMiddleware(authenticator: JWTAuthenticator<AppToken>(keys: keys))
+)
 
-app.grouped(AppToken.guardMiddleware()).get("account") { req in
+userRoutes.grouped(AppToken.guardMiddleware()).get("account") { req in
     try req.auth.require(AppToken.self)
 }
 ```
@@ -47,6 +49,12 @@ try await ServiceContext.withValue(req.serviceContext) {
     try await upstream.call(request)
 }
 ```
+
+## Backend calls
+
+mTLS secures connections to backend services. Forward the original user JWT only on upstream
+user RPC descriptors, where the receiving service verifies it and the owning use case checks
+permissions. User database settings follow the user operation.
 
 ## Requirements
 

@@ -17,12 +17,18 @@ unchanged.
 Authentication returns an identity or throws. A missing credential continues anonymously;
 a failed authentication ends the request with `401 Unauthorized` before the handler runs.
 
+## Backend calls
+
+mTLS secures connections to backend services. Forward the original user JWT only on upstream
+user RPC descriptors, where the receiving service verifies it and the owning use case checks
+permissions. User database settings follow the user operation.
+
 ## Example
 
 ```swift
-app.middleware.use(BearerAuthenticationMiddleware(authenticator: authenticator))
+let userRoutes = app.grouped(BearerAuthenticationMiddleware(authenticator: authenticator))
 
-app.grouped(AppToken.guardMiddleware()).get("account") { req in
+userRoutes.grouped(AppToken.guardMiddleware()).get("account") { req in
     try req.auth.require(AppToken.self)
 }
 ```
