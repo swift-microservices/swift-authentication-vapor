@@ -6,8 +6,8 @@ Where the proven identity goes on Vapor, and why it is the request that carries 
 
 Vapor code reads an identity through `req.auth`: `req.auth.require`, `req.auth.get`, and
 `GuardMiddleware` all look there, which is why the middleware's identity is any
-`Authenticatable`. Everything that is not Vapor, a use case, a repository, an outgoing gRPC
-call, reads a `ServiceContext`. ``BearerAuthenticationMiddleware`` sets both.
+`Authenticatable`. Transport-independent adapters such as outgoing gRPC propagation read a `ServiceContext`.
+User use cases receive the verified identity explicitly from their handler. ``BearerAuthenticationMiddleware`` sets both.
 
 ## The request, not the task
 
@@ -26,7 +26,7 @@ request's context:
 ```swift
 app.get("orders") { req in
     try await ServiceContext.withValue(req.serviceContext) {
-        try await orders.list(request)
+        try await orders.list()
     }
 }
 ```
@@ -38,4 +38,5 @@ presents the original token on upstream user RPC descriptors.
 
 Apply bearer authentication and `guardMiddleware()` to user routes. Missing credentials continue
 unbound; failed verification returns `401 Unauthorized`. The guard requires an identity before
-the handler runs, and the owning use case checks user permissions and resource access.
+the handler runs, and the owning use case checks user permissions and resource access. Keep login and refresh
+routes outside this group.
