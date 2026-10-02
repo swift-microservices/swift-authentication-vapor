@@ -1,1 +1,0 @@
-API breakage: func BearerAuthenticationMiddleware.respond(to:chainingTo:) is now with nonisolated
