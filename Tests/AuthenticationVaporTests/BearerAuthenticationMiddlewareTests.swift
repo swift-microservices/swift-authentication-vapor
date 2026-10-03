@@ -1,9 +1,6 @@
-//
-//  BearerAuthenticationMiddlewareTests.swift
-//  swift-authentication-vapor
-//
-//  Created by Zaid Rahhawi on 9/11/26.
-//
+// Copyright (c) 2026 Zaid Rahhawi
+// SPDX-License-Identifier: MIT
+// See LICENSE for license information.
 
 import Authentication
 import AuthenticationVapor
@@ -41,9 +38,10 @@ struct BearerAuthenticationMiddlewareTests {
         authenticator: TableAuthenticator(identities: ["alice-token": Claims(subject: "alice")], refused: ["expired-token"])
     )
 
-    /// Runs one request against an app with the middleware and a route that reports what it saw:
-    /// the logged-in identity and the principal in the request's `serviceContext`, or `-` for
-    /// none. The task-local `ServiceContext` is not asserted: Vapor 4 bridges its responder chain
+    /// Runs one request and reports the identity and principal observed by the route.
+    ///
+    /// The route returns the logged-in identity and the principal in the request's
+    /// `serviceContext`, or `-` for none. The task-local `ServiceContext` is not asserted: Vapor 4 bridges its responder chain
     /// through event-loop futures, so a task-local bound in middleware does not reach a route.
     func whoami(authorization: String?, handlerCalls: HandlerCalls = HandlerCalls()) async throws -> (status: HTTPStatus, body: String) {
         try await withApp { app in
