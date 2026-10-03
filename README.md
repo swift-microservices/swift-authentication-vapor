@@ -1,5 +1,7 @@
 # swift-authentication-vapor
 
+[![Documentation](https://img.shields.io/badge/docc-read_documentation-blue)](https://swiftpackageindex.com/swift-microservices/swift-authentication-vapor/documentation)
+
 Binding who is calling on Vapor: a bearer token, proved and logged in to the request.
 
 ```swift
