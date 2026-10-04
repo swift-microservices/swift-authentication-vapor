@@ -25,10 +25,14 @@ public import Vapor
 /// }
 /// ```
 ///
-/// ```swift
-/// app.middleware.use(BearerAuthenticationMiddleware(authenticator: authenticator))
+/// Add it to the user route group, with `guardMiddleware()` where a route requires a caller.
+/// Keep sign-in and refresh routes outside that group, so an expired token a client still
+/// attaches cannot block recovery:
 ///
-/// app.grouped(AppToken.guardMiddleware()).get("account") { req in
+/// ```swift
+/// let userRoutes = app.grouped(BearerAuthenticationMiddleware(authenticator: authenticator))
+///
+/// userRoutes.grouped(AppToken.guardMiddleware()).get("account") { req in
 ///     try req.auth.require(AppToken.self)
 /// }
 /// ```
@@ -40,11 +44,14 @@ public import Vapor
 public struct BearerAuthenticationMiddleware<Identity: Authenticatable & Sendable>: AsyncMiddleware {
     private let authenticator: any Authentication.Authenticator<String, Identity>
 
+    /// A middleware that proves bearer tokens with `authenticator`.
+    ///
     /// - Parameter authenticator: Proves the token, such as a `JWTAuthenticator`.
     public init(authenticator: any Authentication.Authenticator<String, Identity>) {
         self.authenticator = authenticator
     }
 
+    /// Authenticates the request's bearer token, if it has one, and responds with the identity logged in.
     public func respond(to request: Request, chainingTo next: any AsyncResponder) async throws -> Response {
         guard let token = request.headers.bearerAuthorization?.token else {
             return try await next.respond(to: request)

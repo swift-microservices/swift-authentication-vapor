@@ -34,9 +34,11 @@ userRoutes.grouped(AppToken.guardMiddleware()).get("account") { req in
 
 The identity is any `Authenticatable`, so Vapor's own guard and require helpers work on it
 unchanged. A request with no token continues anonymously, which is what an open route needs:
-signing in mints the first token and has no caller yet. `Authenticator.authenticate(_:)` returns an identity
-or throws. A failed authentication ends the request with `401 Unauthorized` before the route
-runs. Requiring a caller is a route's decision, made with `guardMiddleware()`.
+signing in mints the first token and has no caller yet. `Authenticator.authenticate(_:)` returns
+an identity or throws. A failed authentication ends the request with `401 Unauthorized` before the route
+runs. Requiring a caller is a route's decision, made with `guardMiddleware()`. Keep sign-in and refresh
+routes outside the authenticated group, so an expired token a client still attaches cannot
+block recovery.
 
 ## The request's context, not the task's
 
