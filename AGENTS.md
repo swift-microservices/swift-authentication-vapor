@@ -11,8 +11,8 @@ This package binds principals on Vapor. Read this before changing anything.
 - It is an `AsyncMiddleware`, not one of Vapor's `AsyncBearerAuthenticator`s, because those call
   the next responder themselves and the principal has to be bound around that call.
 - It sets the identity in both places Vapor code reads it: `request.auth`, for `GuardMiddleware`
-  and `req.auth.require`, and `request.serviceContext`, for everything downstream. Keep both in
-  step. The task-local `ServiceContext` is also bound, but Vapor 4's future-bridged responder
+  and `req.auth.require`, and `request.operationContext`, for everything downstream. Keep both in
+  step. The task-local `OperationContext` is also bound, but Vapor 4's future-bridged responder
   chain does not carry it to routes; do not write tests that assume it does.
 - Authentication returns an identity or throws. An identity binds; a failure ends the request
   with `Abort(.unauthorized)` before the route runs. A request with no token never reaches

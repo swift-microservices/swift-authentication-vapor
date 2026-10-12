@@ -31,8 +31,8 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-microservices/swift-authentication.git", from: "0.3.0"),
-        .package(url: "https://github.com/apple/swift-service-context.git", from: "1.3.0"),
+        .package(url: "https://github.com/swift-microservices/swift-authentication.git", from: "0.4.0"),
+        .package(url: "https://github.com/swift-microservices/swift-operation-context.git", from: "0.1.0"),
         .package(url: "https://github.com/vapor/vapor.git", from: "4.122.0"),
     ],
     targets: [
@@ -40,7 +40,7 @@ let package = Package(
             name: "AuthenticationVapor",
             dependencies: [
                 .product(name: "Authentication", package: "swift-authentication"),
-                .product(name: "ServiceContextModule", package: "swift-service-context"),
+                .product(name: "OperationContext", package: "swift-operation-context"),
                 .product(name: "Vapor", package: "vapor"),
             ],
             swiftSettings: swiftSettings
@@ -50,7 +50,7 @@ let package = Package(
             dependencies: [
                 .target(name: "AuthenticationVapor"),
                 .product(name: "Authentication", package: "swift-authentication"),
-                .product(name: "ServiceContextModule", package: "swift-service-context"),
+                .product(name: "OperationContext", package: "swift-operation-context"),
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "VaporTesting", package: "vapor"),
             ],

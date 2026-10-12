@@ -4,7 +4,7 @@
 
 import Authentication
 import AuthenticationVapor
-import ServiceContextModule
+import OperationContext
 import Testing
 import Vapor
 import VaporTesting
@@ -41,14 +41,14 @@ struct BearerAuthenticationMiddlewareTests {
     /// Runs one request and reports the identity and principal observed by the route.
     ///
     /// The route returns the logged-in identity and the principal in the request's
-    /// `serviceContext`, or `-` for none. The task-local `ServiceContext` is not asserted: Vapor 4 bridges its responder chain
+    /// `operationContext`, or `-` for none. The task-local `OperationContext` is not asserted: Vapor 4 bridges its responder chain
     /// through event-loop futures, so a task-local bound in middleware does not reach a route.
     func whoami(authorization: String?, handlerCalls: HandlerCalls = HandlerCalls()) async throws -> (status: HTTPStatus, body: String) {
         try await withApp { app in
             app.middleware.use(middleware)
             app.get("whoami") { request async in
                 await handlerCalls.record()
-                let principal = request.serviceContext[PrincipalKey<Claims, String>.self]
+                let principal = request.operationContext[PrincipalKey<Claims, String>.self]
                 return "\(request.auth.get(Claims.self)?.subject ?? "-") \(principal?.identity.subject ?? "-") \(principal?.credential ?? "-")"
             }
 
@@ -102,7 +102,7 @@ struct BearerAuthenticationMiddlewareTests {
         #expect(await calls.count == 0)
     }
 
-    enum RequestIDKey: ServiceContextKey {
+    enum RequestIDKey: OperationContextKey {
         typealias Value = String
     }
 
@@ -110,8 +110,8 @@ struct BearerAuthenticationMiddlewareTests {
     /// request ID, while an unrelated task-local context is bound around the rest of the chain.
     struct RequestContextMiddleware: AsyncMiddleware {
         func respond(to request: Request, chainingTo next: any AsyncResponder) async throws -> Response {
-            request.serviceContext[RequestIDKey.self] = "request-1"
-            return try await ServiceContext.withValue(.topLevel) {
+            request.operationContext[RequestIDKey.self] = "request-1"
+            return try await OperationContext.withContext(OperationContext()) {
                 try await next.respond(to: request)
             }
         }
@@ -122,16 +122,31 @@ struct BearerAuthenticationMiddlewareTests {
         try await withApp { app in
             app.middleware.use(RequestContextMiddleware())
             app.middleware.use(middleware)
-            app.get("context") { request in
-                let requestID = request.serviceContext[RequestIDKey.self] ?? "-"
-                let subject = request.serviceContext[PrincipalKey<Claims, String>.self]?.identity.subject ?? "-"
-                return "\(requestID) \(subject)"
+            app.get("context") { request async in
+                await OperationContext.withContext(request.operationContext) {
+                    await Task.yield()
+                    let requestID = OperationContext.current[RequestIDKey.self] ?? "-"
+                    let subject = OperationContext.current[PrincipalKey<Claims, String>.self]?.identity.subject ?? "-"
+                    return "\(requestID) \(subject)"
+                }
             }
 
             try await app.testing().test(.GET, "context", headers: ["Authorization": "Bearer alice-token"]) { response in
                 #expect(response.status == .ok)
                 #expect(response.body.string == "request-1 alice")
             }
+        }
+    }
+
+    @Test("Operation context starts empty and belongs to one request")
+    func contextIsRequestLocal() async throws {
+        try await withApp { app in
+            let first = Request(application: app, on: app.eventLoopGroup.next())
+            let second = Request(application: app, on: app.eventLoopGroup.next())
+            #expect(first.operationContext[RequestIDKey.self] == nil)
+            first.operationContext[RequestIDKey.self] = "first"
+            #expect(first.operationContext[RequestIDKey.self] == "first")
+            #expect(second.operationContext[RequestIDKey.self] == nil)
         }
     }
 

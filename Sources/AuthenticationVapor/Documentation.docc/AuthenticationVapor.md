@@ -7,7 +7,7 @@ Binding who is calling on Vapor: a bearer token, proved and logged in to the req
 ``BearerAuthenticationMiddleware`` reads the `Authorization` header, proves the token with an
 `Authenticator<String, Identity>` from swift-authentication, and sets the identity in two
 places: the request's `auth`, which `GuardMiddleware`, `req.auth.require`, and route handlers
-read, and the request's `serviceContext` as a `Principal<Identity, String>`. A route runs work
+read, and the request's `operationContext` as a `Principal<Identity, String>`. A route runs work
 outside Vapor, such as an outgoing gRPC call that presents the same token onward, under that
 context; <doc:TheRequestsContext> explains why the task's context is not enough.
 
@@ -38,6 +38,10 @@ userRoutes.grouped(AppToken.guardMiddleware()).get("account") { req in
 ### Middleware
 
 - ``BearerAuthenticationMiddleware``
+
+### Request context
+
+- ``Vapor/Request/operationContext``
 
 ### Design
 
