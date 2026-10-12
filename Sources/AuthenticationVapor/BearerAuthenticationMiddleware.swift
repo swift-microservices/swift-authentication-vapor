@@ -3,7 +3,7 @@
 // See LICENSE for license information.
 
 public import Authentication
-import ServiceContextModule
+import OperationContext
 public import Vapor
 
 /// Binds the principal a bearer token proves, for the length of the request.
@@ -13,14 +13,14 @@ public import Vapor
 /// throws. A failed authentication ends the request with `401 Unauthorized` before the route runs.
 ///
 /// The proven identity is set in two places: the request's `auth`, which `GuardMiddleware`,
-/// `req.auth.require`, and route handlers read, and the request's `serviceContext`, under
+/// `req.auth.require`, and route handlers read, and the request's `operationContext`, under
 /// `PrincipalKey<Identity, String>`. Vapor 4 bridges its responder chain through event-loop
 /// futures, so a task-local bound here does not reach a route; the request's context is the one
-/// that does. Work that reads `ServiceContext.current`, such as an outgoing gRPC call presenting
+/// that does. Work that reads `OperationContext.current`, such as an outgoing gRPC call presenting
 /// the token onward, is run under it:
 ///
 /// ```swift
-/// try await ServiceContext.withValue(req.serviceContext) {
+/// try await OperationContext.withContext(req.operationContext) {
 ///     try await upstream.call(request)
 /// }
 /// ```
@@ -61,11 +61,11 @@ public struct BearerAuthenticationMiddleware<Identity: Authenticatable & Sendabl
 
         request.auth.login(identity)
 
-        var serviceContext = request.serviceContext
-        serviceContext[PrincipalKey<Identity, String>.self] = Principal(identity: identity, credential: token)
-        request.serviceContext = serviceContext
+        var operationContext = request.operationContext
+        operationContext[PrincipalKey<Identity, String>.self] = Principal(identity: identity, credential: token)
+        request.operationContext = operationContext
 
-        return try await ServiceContext.withValue(serviceContext) {
+        return try await OperationContext.withContext(operationContext) {
             try await next.respond(to: request)
         }
     }

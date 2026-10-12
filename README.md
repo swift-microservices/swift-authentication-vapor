@@ -5,7 +5,7 @@
 Binding who is calling on Vapor: a bearer token, proved and logged in to the request.
 
 ```swift
-.package(url: "https://github.com/swift-microservices/swift-authentication-vapor.git", from: "0.3.0"),
+.package(url: "https://github.com/swift-microservices/swift-authentication-vapor.git", from: "0.4.0"),
 ```
 
 ```swift
@@ -19,7 +19,7 @@ Binding who is calling on Vapor: a bearer token, proved and logged in to the req
 and sets the identity in two places:
 
 - the request's `auth`, which `GuardMiddleware`, `req.auth.require`, and route handlers read;
-- the request's `serviceContext`, as a `Principal<Identity, String>` under
+- the request's `operationContext`, as a `Principal<Identity, String>` under
   `PrincipalKey<Identity, String>`.
 
 ```swift
@@ -43,13 +43,13 @@ block recovery.
 ## The request's context, not the task's
 
 Vapor 4 bridges its responder chain through event-loop futures, so a task-local bound in
-middleware does not reach a route. The request's `serviceContext` is the one that does, which is
-also how Vapor's own tracing middleware carries its span. Work that reads
-`ServiceContext.current`, such as an outgoing gRPC call presenting the token onward through
+middleware does not reach a route. AuthenticationVapor provides `request.operationContext`
+in request storage, starting empty and preserving values added by earlier middleware. Work that reads
+`OperationContext.current`, such as an outgoing gRPC call presenting the token onward through
 swift-authentication-grpc, is run under it:
 
 ```swift
-try await ServiceContext.withValue(req.serviceContext) {
+try await OperationContext.withContext(req.operationContext) {
     try await upstream.call(request)
 }
 ```
@@ -62,7 +62,7 @@ permissions. User database settings follow the user operation.
 
 ## Requirements
 
-Swift 6.3, macOS 15 or Linux. Vapor 4.122, swift-authentication 0.3.
+Swift 6.3, macOS 15 or Linux. Vapor 4.122, swift-authentication 0.4.
 
 Vapor 4 links full Foundation, including its internationalization libraries (still true of
 4.122.2), so unlike the other swift-authentication packages this one has no Foundation linking
