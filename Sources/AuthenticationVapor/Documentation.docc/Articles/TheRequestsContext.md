@@ -6,7 +6,7 @@ Where the proven identity goes on Vapor, and why it is the request that carries 
 
 Vapor code reads an identity through `req.auth`: `req.auth.require`, `req.auth.get`, and
 `GuardMiddleware` all look there, which is why the middleware's identity is any
-`Authenticatable`. Transport-independent adapters, such as outgoing gRPC propagation, read a
+`Authenticatable`. Transport-independent adapters, such as outgoing gRPC propagation, read an
 `OperationContext`. User use cases receive the verified identity explicitly from their handler.
 ``BearerAuthenticationMiddleware`` sets both.
 
