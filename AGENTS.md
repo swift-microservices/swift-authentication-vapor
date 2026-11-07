@@ -61,8 +61,8 @@ This package binds principals on Vapor. Read this before changing anything.
 
 ## CI
 
-The standard library CI from the swift-microservices delivery skill
-([library-ci.md](https://github.com/swift-microservices/skills/blob/main/skills/delivering-swift-services/references/library-ci.md)).
+The standard library CI from the swift-microservices-architect skill
+([A library's CI workflows](https://github.com/swift-microservices/swift-microservices-architect-skill/blob/main/skills/swift-microservices-architect/references/delivery.md#a-librarys-ci-workflows)).
 Exceptions:
 
 - No Foundation-linking job: the one library product, `AuthenticationVapor`, depends on Vapor 4
